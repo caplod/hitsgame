@@ -144,7 +144,7 @@ class Track(NamedTuple):
             # Encode as AAC at 128kbps.
             "-b:a", "128k",
             "-c:a", "aac",
-            "-to", "60", # first 60 seconds
+            "-to", "120", # first 120 seconds
             out_fname,
         ])
 

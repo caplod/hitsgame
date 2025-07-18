@@ -43,7 +43,7 @@ Software tools needed:
     add the configuration as shown in the next section.
  4. Run `mkhitsgame.py`. The script will:
     - Extract metadata from ID3 tags in your audio files
-    - Convert each song to a 60-second mono AAC clip at 128kbps
+    - Convert each song to a 120 mono AAC clip at 128kbps
     - Generate hash-based filenames for anonymity
     - Create printable cards with QR codes
     - Print statistics about track distribution over years and decades
