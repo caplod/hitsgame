@@ -92,9 +92,6 @@ class Track(NamedTuple):
             hash_input = f"{year}_{artist}_{title}"
             md5sum = hashlib.md5(hash_input.encode('utf-8')).hexdigest()
             
-            # Get file extension
-            _, ext = os.path.splitext(file_path)
-            
             # Create URL (MP4 will be created during encoding step)
             url = config.url_prefix + md5sum + ".mp4"
             
