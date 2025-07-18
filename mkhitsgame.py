@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import html
 import os
@@ -289,7 +290,7 @@ class Table(NamedTuple):
             f"""
             <style>
             text {{ font-family: {config.font!r}; }}
-            .year {{ font-size: 18px; font-weight: 900; }}
+            .year {{ font-size: 10px; font-weight: 700; }}
             .title, .artist, .footer {{ font-size: 5.2px; font-weight: 400; }}
             .title {{ font-style: italic; }}
             rect, line {{ stroke: black; stroke-width: 0.2; }}
@@ -350,7 +351,7 @@ class Table(NamedTuple):
                 x_mm = hmargin_mm + (ix + 0.5) * side_mm
                 y_mm = vmargin_mm + (iy + 0.5) * side_mm
                 parts.append(
-                    f'<text x="{x_mm}" y="{y_mm + 6.5}" text-anchor="middle" '
+                    f'<text x="{x_mm}" y="{y_mm + 5.5}" text-anchor="middle" '
                     f'class="year">{track.year}</text>'
                 )
                 for part in render_text_svg(x_mm, y_mm - 19, track.artist, "artist"):
@@ -368,11 +369,32 @@ class Table(NamedTuple):
         return "\n".join(parts)
 
 
+def find_audio_files(directory: str, audio_extensions: set) -> List[str]:
+    """Recursively find all audio files in the specified directory."""
+    audio_files = []
+    
+    for root, dirs, files in os.walk(directory):
+        for filename in files:
+            _, ext = os.path.splitext(filename)
+            if ext.lower() in audio_extensions:
+                file_path = os.path.join(root, filename)
+                audio_files.append(file_path)
+    
+    return audio_files
+
 def main() -> None:
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description='Generate music game cards from audio files')
+    parser.add_argument('--tracks-dir', default='tracks', 
+                       help='Directory containing audio files (default: tracks)')
+    args = parser.parse_args()
+    
+    tracks_dir = args.tracks_dir
+    
     config = Config.load("mkhitsgame.toml")
     os.makedirs("out", exist_ok=True)
     os.makedirs("build", exist_ok=True)
-    os.makedirs("tracks", exist_ok=True)
+    os.makedirs(tracks_dir, exist_ok=True)
     os.makedirs(config.songs_dir, exist_ok=True)
 
     table = Table.new()
@@ -382,9 +404,7 @@ def main() -> None:
     year_counts: Counter[int] = Counter()
     decade_counts: Counter[int] = Counter()
 
-    # Read tracks from tracks folder
-    tracks_dir = "tracks"
-    
+    # Check if tracks directory exists
     if not os.path.exists(tracks_dir):
         print(f"Error: {tracks_dir} directory not found")
         sys.exit(1)
@@ -392,19 +412,18 @@ def main() -> None:
     # Supported audio file extensions
     audio_extensions = {'.mp3', '.flac', '.m4a', '.ogg', '.wav'}
     
-    print(f"Processing songs from {tracks_dir}...")
+    print(f"Processing songs from {tracks_dir} (recursive)...")
     
-    for filename in os.listdir(tracks_dir):
-        file_path = os.path.join(tracks_dir, filename)
-        
-        # Skip directories and non-audio files
-        if not os.path.isfile(file_path):
-            continue
-            
-        _, ext = os.path.splitext(filename)
-        if ext.lower() not in audio_extensions:
-            continue
-        
+    # Find all audio files recursively
+    audio_files = find_audio_files(tracks_dir, audio_extensions)
+    
+    if not audio_files:
+        print(f"No audio files found in {tracks_dir}")
+        sys.exit(1)
+    
+    print(f"Found {len(audio_files)} audio files")
+    
+    for file_path in audio_files:
         # Load track from file
         track = Track.load_from_file(config, file_path)
         if track:
@@ -456,8 +475,13 @@ def main() -> None:
             f.write(table.render_svg(config, "qr", f"{p}b"))
 
     # Combine the svgs into a single pdf for easy printing.
-    cmd = ["rsvg-convert", "--format=pdf", "--output=build/cards.pdf", *pdf_inputs]
+    # Generate PDF name based on tracks directory
+    pdf_name = f"{os.path.basename(tracks_dir)}_cards.pdf"
+    pdf_path = f"build/{pdf_name}"
+    cmd = ["rsvg-convert", "--format=pdf", f"--output={pdf_path}", *pdf_inputs]
     subprocess.check_call(cmd)
+    
+    print(f"\nGenerated PDF: {pdf_path}")
 
 
 if __name__ == "__main__":

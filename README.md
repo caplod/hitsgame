@@ -33,17 +33,29 @@ Software tools needed:
 
 ## Preparation
 
- 1. Create a directory named `tracks` and put the audio files in there that you want
-    to include. The script supports `.mp3`, `.flac`, `.m4a`, `.ogg`, and `.wav` files.
+ 1. Create a directory and put the audio files in there that you want to include. 
+    The script supports `.mp3`, `.flac`, `.m4a`, `.ogg`, and `.wav` files and will 
+    recursively search through all subdirectories.
  2. Ensure your audio files have proper ID3 tags:
     - **TITLE**: Song title
     - **ARTIST**: Artist name  
     - **ORIGINALDATE** (preferred) or **DATE** or **YEAR**: Release year
- 3. Create a file named `mkhitsgame.toml` next to the `tracks` directory, and
-    add the configuration as shown in the next section.
- 4. Run `mkhitsgame.py`. The script will:
+ 3. Create a file named `mkhitsgame.toml` and add the configuration as shown in the next section.
+ 4. Run `mkhitsgame.py` with optional parameters:
+    ```bash
+    # Use default 'tracks' directory
+    python mkhitsgame.py
+    
+    # Use custom directory
+    python mkhitsgame.py --tracks-dir my_music_collection
+    
+    # Use any directory path
+    python mkhitsgame.py --tracks-dir "/path/to/music/80s_hits"
+    ```
+    The script will:
+    - Recursively search for audio files in the specified directory
     - Extract metadata from ID3 tags in your audio files
-    - Convert each song to a 120 mono AAC clip at 128kbps
+    - Convert each song to a 120-second mono AAC clip at 128kbps
     - Generate hash-based filenames for anonymity
     - Create printable cards with QR codes
     - Print statistics about track distribution over years and decades
@@ -52,7 +64,7 @@ Software tools needed:
     with no metadata and unguessable filenames, safe for public webserver hosting. 
     `build` contains the PDF with cards and intermediate SVG files.
  6. Upload the contents of your output directory to your webserver.
- 7. Print `build/cards.pdf` and cut out the cards.
+ 7. Print the generated PDF (named `<directory>_cards.pdf`) and cut out the cards.
 
 ## Configuration
 
