@@ -382,11 +382,39 @@ def find_audio_files(directory: str, audio_extensions: set) -> List[str]:
     
     return audio_files
 
+
+def create_json_data(json_path: str, tracks: List[Track]) -> None:
+    """Create JSON file with track information for web interface."""
+    import json
+    
+    # Create directory for JSON file if it doesn't exist
+    json_dir = os.path.dirname(json_path)
+    if json_dir and not os.path.exists(json_dir):
+        os.makedirs(json_dir, exist_ok=True)
+    
+    # Convert tracks to JSON-serializable format
+    songs_data = []
+    for track in tracks:
+        songs_data.append({
+            "year": track.year,
+            "artist": track.artist,
+            "title": track.title,
+            "md5hash": track.md5sum
+        })
+    
+    # Write JSON file
+    with open(json_path, 'w', encoding='utf-8') as f:
+        json.dump(songs_data, f, indent=2, ensure_ascii=False)
+    
+    print(f"JSON data created: {json_path} with {len(tracks)} songs")
+
 def main() -> None:
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='Generate music game cards from audio files')
     parser.add_argument('--tracks-dir', default='tracks', 
                        help='Directory containing audio files (default: tracks)')
+    parser.add_argument('--generate-db', action='store_true',
+                       help='Generate JSON data file with song information')
     args = parser.parse_args()
     
     tracks_dir = args.tracks_dir
@@ -429,6 +457,12 @@ def main() -> None:
         if track:
             tracks.append(track)
     
+    # Generate JSON file for web interface if requested
+    if args.generate_db:
+        www_dir = os.path.dirname(config.songs_dir)
+        json_path = os.path.join(www_dir, "songs.json")
+        create_json_data(json_path, tracks)
+
     # Encode tracks to output format
     print(f"\nEncoding {len(tracks)} tracks to MP4...")
     for track in tracks:
