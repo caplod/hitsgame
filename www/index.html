@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hitsgame - Music Guessing Game</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            padding: 20px;
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .game-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .audio-container {
+            margin: 30px 0;
+        }
+        
+        audio {
+            width: 100%;
+            max-width: 400px;
+            border-radius: 25px;
+        }
+        
+        .controls {
+            margin: 30px 0;
+        }
+        
+        button {
+            font-size: 18px;
+            padding: 15px 25px;
+            margin: 10px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            min-width: 120px;
+        }
+        
+        #playBtn {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+        }
+        
+        #playBtn:hover {
+            background: linear-gradient(45deg, #45a049, #3d8b40);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+        }
+        
+        #solveBtn {
+            background: linear-gradient(45deg, #2196F3, #1976D2);
+            color: white;
+        }
+        
+        #solveBtn:hover {
+            background: linear-gradient(45deg, #1976D2, #1565C0);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(33, 150, 243, 0.4);
+        }
+        
+        #nextBtn {
+            background: linear-gradient(45deg, #FF9800, #F57C00);
+            color: white;
+        }
+        
+        #nextBtn:hover {
+            background: linear-gradient(45deg, #F57C00, #E65100);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 152, 0, 0.4);
+        }
+        
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        #songInfo {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        #songInfo h3 {
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            color: #FFD700;
+        }
+        
+        #songInfo p {
+            font-size: 1.1em;
+            margin: 10px 0;
+            line-height: 1.5;
+        }
+        
+        #songInfo strong {
+            color: #FFD700;
+        }
+        
+        .loading {
+            font-size: 1.2em;
+            margin: 20px 0;
+        }
+        
+        .error {
+            color: #ff6b6b;
+            font-size: 1.1em;
+            margin: 20px 0;
+        }
+        
+        @media (max-width: 600px) {
+            .game-container {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            button {
+                font-size: 16px;
+                padding: 12px 20px;
+                margin: 5px;
+                min-width: 100px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🎵 Music Guessing Game</h1>
+        
+        <div id="loading" class="loading">Loading songs...</div>
+        
+        <div id="game" style="display: none;">
+            <div class="audio-container">
+                <audio id="audioPlayer" controls preload="metadata">
+                    Your browser does not support the audio element.
+                </audio>
+            </div>
+            
+            <div class="controls">
+                <button id="playBtn">▶️ Play</button>
+                <button id="solveBtn">🔍 Solve</button>
+                <button id="nextBtn">⏭️ Next</button>
+            </div>
+            
+            <div id="songInfo" style="display: none;">
+                <h3>🎯 Song Information:</h3>
+                <p><strong>Year:</strong> <span id="year"></span></p>
+                <p><strong>Artist:</strong> <span id="artist"></span></p>
+                <p><strong>Title:</strong> <span id="title"></span></p>
+            </div>
+        </div>
+        
+        <div id="error" class="error" style="display: none;">
+            Failed to load songs. Make sure the songs.json file exists and the server is running properly.
+        </div>
+    </div>
+
+    <script>
+        let songs = [];
+        let currentSong = null;
+        
+        // DOM elements
+        const loadingDiv = document.getElementById('loading');
+        const gameDiv = document.getElementById('game');
+        const errorDiv = document.getElementById('error');
+        const audioPlayer = document.getElementById('audioPlayer');
+        const playBtn = document.getElementById('playBtn');
+        const solveBtn = document.getElementById('solveBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const songInfoDiv = document.getElementById('songInfo');
+        const yearSpan = document.getElementById('year');
+        const artistSpan = document.getElementById('artist');
+        const titleSpan = document.getElementById('title');
+        
+        // Load songs data
+        async function loadSongs() {
+            try {
+                const response = await fetch('songs.json');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                songs = await response.json();
+                
+                if (songs.length === 0) {
+                    throw new Error('No songs found in database');
+                }
+                
+                console.log(`Loaded ${songs.length} songs`);
+                loadingDiv.style.display = 'none';
+                gameDiv.style.display = 'block';
+                
+                // Load first song
+                loadRandomSong();
+                
+            } catch (error) {
+                console.error('Error loading songs:', error);
+                loadingDiv.style.display = 'none';
+                errorDiv.style.display = 'block';
+            }
+        }
+        
+        // Pick a random song and load it
+        function loadRandomSong() {
+            if (songs.length === 0) return;
+            
+            // Pick random song
+            const randomIndex = Math.floor(Math.random() * songs.length);
+            currentSong = songs[randomIndex];
+            
+            // Load audio
+            const audioSrc = `songs/${currentSong.md5hash}.mp4`;
+            audioPlayer.src = audioSrc;
+            
+            // Reset UI
+            songInfoDiv.style.display = 'none';
+            playBtn.disabled = false;
+            solveBtn.disabled = false;
+            
+            console.log('Loaded song:', currentSong.title, 'by', currentSong.artist);
+        }
+        
+        // Play button click handler
+        playBtn.addEventListener('click', () => {
+            if (audioPlayer.paused) {
+                audioPlayer.play().catch(error => {
+                    console.error('Error playing audio:', error);
+                    alert('Error playing audio. Make sure the audio file exists.');
+                });
+            } else {
+                audioPlayer.pause();
+            }
+        });
+        
+        // Update play button text based on audio state
+        audioPlayer.addEventListener('play', () => {
+            playBtn.textContent = '⏸️ Pause';
+        });
+        
+        audioPlayer.addEventListener('pause', () => {
+            playBtn.textContent = '▶️ Play';
+        });
+        
+        audioPlayer.addEventListener('ended', () => {
+            playBtn.textContent = '▶️ Play';
+        });
+        
+        // Solve button click handler
+        solveBtn.addEventListener('click', () => {
+            if (!currentSong) return;
+            
+            // Display song information
+            yearSpan.textContent = currentSong.year;
+            artistSpan.textContent = currentSong.artist;
+            titleSpan.textContent = currentSong.title;
+            
+            songInfoDiv.style.display = 'block';
+            solveBtn.disabled = true;
+        });
+        
+        // Next button click handler
+        nextBtn.addEventListener('click', () => {
+            // Pause current audio
+            audioPlayer.pause();
+            
+            // Load new random song
+            loadRandomSong();
+        });
+        
+        // Handle audio loading errors
+        audioPlayer.addEventListener('error', (e) => {
+            console.error('Audio error:', e);
+            alert(`Error loading audio file: ${audioPlayer.src}\nMake sure the file exists in the songs folder.`);
+        });
+        
+        // Initialize game
+        loadSongs();
+    </script>
+</body>
+</html>
